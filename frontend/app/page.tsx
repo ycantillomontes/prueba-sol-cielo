@@ -132,8 +132,7 @@ export default function Home() {
               value={formData.applicant_name}
               onChange={handleChange}
               required
-              className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-blue-500"
-              placeholder="Ingresa tu nombre completo"
+              className="w-full rounded-md border border-gray-300 px-4 py-2 text-gray-900 outline-none focus:border-blue-500"
             />
           </div>
 
@@ -152,8 +151,7 @@ export default function Home() {
               value={formData.applicant_email}
               onChange={handleChange}
               required
-              className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-blue-500"
-              placeholder="correo@ejemplo.com"
+              className="w-full rounded-md border border-gray-300 px-4 py-2 text-gray-900 outline-none focus:border-blue-500"
             />
           </div>
 
@@ -170,7 +168,7 @@ export default function Home() {
               name="category"
               value={formData.category}
               onChange={handleChange}
-              className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-blue-500"
+              className="w-full rounded-md border border-gray-300 px-4 py-2 text-gray-900 outline-none focus:border-blue-500"
             >
               <option value="PETICION">Petición</option>
               <option value="QUEJA">Queja</option>
@@ -194,8 +192,7 @@ export default function Home() {
               value={formData.subject}
               onChange={handleChange}
               required
-              className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-blue-500"
-              placeholder="Asunto de la solicitud"
+              className="w-full rounded-md border border-gray-300 px-4 py-2 text-gray-900 outline-none focus:border-blue-500"
             />
           </div>
 
@@ -214,8 +211,7 @@ export default function Home() {
               onChange={handleChange}
               required
               rows={6}
-              className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-blue-500"
-              placeholder="Describe detalladamente tu solicitud"
+              className="w-full rounded-md border border-gray-300 px-4 py-2 text-gray-900 outline-none focus:border-blue-500"
             />
           </div>
 
@@ -239,7 +235,7 @@ export default function Home() {
                     : []
                 );
               }}
-              className="w-full rounded-md border border-gray-300 px-4 py-2"
+              className="w-full rounded-md border border-gray-300 px-4 py-2 text-gray-900"
             />
 
             <p className="mt-1 text-sm text-gray-500">
