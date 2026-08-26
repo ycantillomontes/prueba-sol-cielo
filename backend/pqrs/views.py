@@ -1,3 +1,9 @@
-from django.shortcuts import render
+from rest_framework import generics
 
-# Create your views here.
+from .models import TicketPQRS
+from .serializers import TicketPQRSSerializer
+
+
+class TicketPQRSCrearView(generics.CreateAPIView):
+    queryset = TicketPQRS.objects.all()
+    serializer_class = TicketPQRSSerializer
