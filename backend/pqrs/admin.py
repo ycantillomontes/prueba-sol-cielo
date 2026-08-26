@@ -1,6 +1,24 @@
 from django.contrib import admin
 
-from .models import TicketPQRS
+from .models import PQRSAttachment, TicketPQRS
+
+
+class PQRSAttachmentInline(admin.TabularInline):
+    model = PQRSAttachment
+    extra = 0
+    can_delete = False
+    readonly_fields = (
+        "file",
+        "uploaded_at",
+    )
+
+    fields = (
+        "file",
+        "uploaded_at",
+    )
+
+    def has_add_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(TicketPQRS)
@@ -15,20 +33,6 @@ class TicketPQRSAdmin(admin.ModelAdmin):
         "created_at",
     )
 
-    list_filter = (
-        "category",
-        "status",
-        "created_at",
-    )
-
-    search_fields = (
-        "ticket_code",
-        "applicant_name",
-        "applicant_email",
-        "subject",
-    )
-
-    readonly_fields = (
-        "ticket_code",
-        "created_at",
-    )
+    inlines = [
+        PQRSAttachmentInline,
+    ]

@@ -35,12 +35,6 @@ class TicketPQRS(models.Model):
 
     description = models.TextField()
 
-    attachment = models.FileField(
-        upload_to="pqrs/",
-        blank=True,
-        null=True,
-    )
-
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
@@ -57,7 +51,11 @@ class TicketPQRS(models.Model):
                 .first()
             )
 
-            next_number = 1001 if not last_ticket else last_ticket.id + 1001
+            next_number = (
+                1001
+                if not last_ticket
+                else last_ticket.id + 1001
+            )
 
             self.ticket_code = f"PQRS-{next_number}"
 
@@ -65,3 +63,22 @@ class TicketPQRS(models.Model):
 
     def __str__(self):
         return f"{self.ticket_code} - {self.subject}"
+
+
+class PQRSAttachment(models.Model):
+    ticket = models.ForeignKey(
+        TicketPQRS,
+        on_delete=models.CASCADE,
+        related_name="attachments",
+    )
+
+    file = models.FileField(
+        upload_to="pqrs/",
+    )
+
+    uploaded_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    def __str__(self):
+        return self.file.name

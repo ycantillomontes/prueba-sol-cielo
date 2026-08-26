@@ -14,6 +14,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [attachments, setAttachments] = useState<File[]>([]);
 
   const handleChange = (
     event: React.ChangeEvent<
@@ -29,54 +30,68 @@ export default function Home() {
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-  event.preventDefault();
+    event.preventDefault();
 
-  setLoading(true);
-  setSuccessMessage("");
-  setErrorMessage("");
+    setLoading(true);
+    setSuccessMessage("");
+    setErrorMessage("");
 
-  try {
-    const response = await fetch("http://127.0.0.1:8000/api/pqrs/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(formData),
+    const dataToSend = new FormData();
+
+    dataToSend.append("applicant_name", formData.applicant_name);
+    dataToSend.append("applicant_email", formData.applicant_email);
+    dataToSend.append("category", formData.category);
+    dataToSend.append("subject", formData.subject);
+    dataToSend.append("description", formData.description);
+
+    attachments.forEach((file) => {
+      dataToSend.append("attachments", file);
     });
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(
-        data.detail || "No fue posible radicar la PQRS."
+    try {
+      const response = await fetch(
+        "http://127.0.0.1:8000/api/pqrs/",
+        {
+          method: "POST",
+          body: dataToSend,
+        }
       );
-    }
 
-    setSuccessMessage(
-      `Solicitud radicada correctamente. Número de radicado: ${data.ticket_code}`
-    );
+      const data = await response.json();
 
-    setFormData({
-      applicant_name: "",
-      applicant_email: "",
-      category: "PETICION",
-      subject: "",
-      description: "",
-    });
-  } catch (error) {
-    if (error instanceof TypeError) {
-      setErrorMessage(
-        "No fue posible conectar con el servidor. Verifica que el backend de Django esté ejecutándose."
+      if (!response.ok) {
+        throw new Error(
+          data.detail || "No fue posible radicar la PQRS."
+        );
+      }
+
+      setSuccessMessage(
+        `Solicitud radicada correctamente. Número de radicado: ${data.ticket_code}`
       );
-    } else if (error instanceof Error) {
-      setErrorMessage(error.message);
-    } else {
-      setErrorMessage("Ocurrió un error inesperado.");
+
+      setFormData({
+        applicant_name: "",
+        applicant_email: "",
+        category: "PETICION",
+        subject: "",
+        description: "",
+      });
+
+      setAttachments([]);
+    } catch (error) {
+      if (error instanceof TypeError) {
+        setErrorMessage(
+          "No fue posible conectar con el servidor. Verifica que el backend de Django esté ejecutándose."
+        );
+      } else if (error instanceof Error) {
+        setErrorMessage(error.message);
+      } else {
+        setErrorMessage("Ocurrió un error inesperado.");
+      }
+    } finally {
+      setLoading(false);
     }
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   return (
     <main className="min-h-screen bg-gray-100 px-4 py-10">
@@ -202,6 +217,40 @@ export default function Home() {
               className="w-full rounded-md border border-gray-300 px-4 py-2 outline-none focus:border-blue-500"
               placeholder="Describe detalladamente tu solicitud"
             />
+          </div>
+
+          <div>
+            <label
+              htmlFor="attachments"
+              className="mb-2 block font-medium text-gray-700"
+            >
+              Anexos
+            </label>
+
+            <input
+              id="attachments"
+              name="attachments"
+              type="file"
+              multiple
+              onChange={(event) => {
+                setAttachments(
+                  event.target.files
+                    ? Array.from(event.target.files)
+                    : []
+                );
+              }}
+              className="w-full rounded-md border border-gray-300 px-4 py-2"
+            />
+
+            <p className="mt-1 text-sm text-gray-500">
+              Puedes seleccionar uno o varios archivos.
+            </p>
+
+            {attachments.length > 0 && (
+              <p className="mt-2 text-sm text-gray-600">
+                {attachments.length} archivo(s) seleccionado(s).
+              </p>
+            )}
           </div>
 
           <button

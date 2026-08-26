@@ -25,3 +25,6 @@ out/
 
 # Logs
 *.log
+
+# Django uploaded files
+backend/media/
