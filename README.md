@@ -90,6 +90,15 @@ cmd
 "python manage.py check"
 
 
+Para acceder al panel administrativo de Django:
+
+1. Asegúrate de tener el entorno virtual activado.
+2. Si aún no tienes un superusuario, créalo con:
+
+cmd
+" python manage.py createsuperuser"
+
+
 Ejecutar el servidor:
 
 cmd
