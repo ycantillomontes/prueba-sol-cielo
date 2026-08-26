@@ -29,50 +29,54 @@ export default function Home() {
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  event.preventDefault();
 
-    setLoading(true);
-    setSuccessMessage("");
-    setErrorMessage("");
+  setLoading(true);
+  setSuccessMessage("");
+  setErrorMessage("");
 
-    try {
-      const response = await fetch("http://127.0.0.1:8000/api/pqrs/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
+  try {
+    const response = await fetch("http://127.0.0.1:8000/api/pqrs/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(formData),
+    });
 
-      const data = await response.json();
+    const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(
-          data.detail || "No fue posible radicar la PQRS."
-        );
-      }
-
-      setSuccessMessage(
-        `Solicitud radicada correctamente. Número de radicado: ${data.ticket_code}`
+    if (!response.ok) {
+      throw new Error(
+        data.detail || "No fue posible radicar la PQRS."
       );
-
-      setFormData({
-        applicant_name: "",
-        applicant_email: "",
-        category: "PETICION",
-        subject: "",
-        description: "",
-      });
-    } catch (error) {
-      if (error instanceof Error) {
-        setErrorMessage(error.message);
-      } else {
-        setErrorMessage("Ocurrió un error inesperado.");
-      }
-    } finally {
-      setLoading(false);
     }
-  };
+
+    setSuccessMessage(
+      `Solicitud radicada correctamente. Número de radicado: ${data.ticket_code}`
+    );
+
+    setFormData({
+      applicant_name: "",
+      applicant_email: "",
+      category: "PETICION",
+      subject: "",
+      description: "",
+    });
+  } catch (error) {
+    if (error instanceof TypeError) {
+      setErrorMessage(
+        "No fue posible conectar con el servidor. Verifica que el backend de Django esté ejecutándose."
+      );
+    } else if (error instanceof Error) {
+      setErrorMessage(error.message);
+    } else {
+      setErrorMessage("Ocurrió un error inesperado.");
+    }
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <main className="min-h-screen bg-gray-100 px-4 py-10">
