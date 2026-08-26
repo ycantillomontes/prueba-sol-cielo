@@ -1,4 +1,11 @@
-from django.db import models
+from django.db import models, transaction
+
+
+class TicketSequence(models.Model):
+    last_number = models.PositiveIntegerField(default=1000)
+
+    def __str__(self):
+        return str(self.last_number)
 
 
 class TicketPQRS(models.Model):
@@ -45,21 +52,20 @@ class TicketPQRS(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.ticket_code:
-            last_ticket = (
-                TicketPQRS.objects
-                .order_by("-id")
-                .first()
-            )
+            with transaction.atomic():
+                sequence, _ = TicketSequence.objects.select_for_update().get_or_create(
+                    pk=1,
+                    defaults={"last_number": 1000},
+                )
 
-            next_number = (
-                1001
-                if not last_ticket
-                else last_ticket.id + 1001
-            )
+                sequence.last_number += 1
+                sequence.save(update_fields=["last_number"])
 
-            self.ticket_code = f"PQRS-{next_number}"
+                self.ticket_code = f"PQRS-{sequence.last_number}"
 
-        super().save(*args, **kwargs)
+                super().save(*args, **kwargs)
+        else:
+            super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.ticket_code} - {self.subject}"
