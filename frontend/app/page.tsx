@@ -11,6 +11,10 @@ export default function Home() {
     description: "",
   });
 
+  const [loading, setLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+
   const handleChange = (
     event: React.ChangeEvent<
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
@@ -24,10 +28,50 @@ export default function Home() {
     }));
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    console.log("Datos del formulario:", formData);
+    setLoading(true);
+    setSuccessMessage("");
+    setErrorMessage("");
+
+    try {
+      const response = await fetch("http://127.0.0.1:8000/api/pqrs/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.detail || "No fue posible radicar la PQRS."
+        );
+      }
+
+      setSuccessMessage(
+        `Solicitud radicada correctamente. Número de radicado: ${data.ticket_code}`
+      );
+
+      setFormData({
+        applicant_name: "",
+        applicant_email: "",
+        category: "PETICION",
+        subject: "",
+        description: "",
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        setErrorMessage(error.message);
+      } else {
+        setErrorMessage("Ocurrió un error inesperado.");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -42,6 +86,18 @@ export default function Home() {
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {successMessage && (
+            <div className="rounded-md bg-green-100 p-4 text-green-800">
+              {successMessage}
+            </div>
+          )}
+
+          {errorMessage && (
+            <div className="rounded-md bg-red-100 p-4 text-red-800">
+              {errorMessage}
+            </div>
+          )}
+
           <div>
             <label
               htmlFor="applicant_name"
@@ -146,9 +202,10 @@ export default function Home() {
 
           <button
             type="submit"
-            className="w-full rounded-md bg-blue-600 px-4 py-3 font-semibold text-white hover:bg-blue-700"
+            disabled={loading}
+            className="w-full rounded-md bg-blue-600 px-4 py-3 font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-400"
           >
-            Radicar PQRS
+            {loading ? "Radicando..." : "Radicar PQRS"}
           </button>
         </form>
       </div>
