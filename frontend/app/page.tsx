@@ -14,7 +14,8 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
-  const [attachments, setAttachments] = useState<File[]>([]);
+
+  const [attachments, setAttachments] = useState<(File | null)[]>([null]);
 
   const handleChange = (
     event: React.ChangeEvent<
@@ -27,6 +28,29 @@ export default function Home() {
       ...previous,
       [name]: value,
     }));
+  };
+
+  const handleAttachmentChange = (
+    index: number,
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0] ?? null;
+
+    setAttachments((previous) => {
+      const updated = [...previous];
+      updated[index] = file;
+      return updated;
+    });
+  };
+
+  const addAttachmentInput = () => {
+    setAttachments((previous) => [...previous, null]);
+  };
+
+  const removeAttachment = (index: number) => {
+    setAttachments((previous) =>
+      previous.filter((_, currentIndex) => currentIndex !== index)
+    );
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -45,7 +69,9 @@ export default function Home() {
     dataToSend.append("description", formData.description);
 
     attachments.forEach((file) => {
-      dataToSend.append("attachments", file);
+      if (file) {
+        dataToSend.append("attachments", file);
+      }
     });
 
     try {
@@ -77,7 +103,7 @@ export default function Home() {
         description: "",
       });
 
-      setAttachments([]);
+      setAttachments([null]);
     } catch (error) {
       if (error instanceof TypeError) {
         setErrorMessage(
@@ -92,6 +118,10 @@ export default function Home() {
       setLoading(false);
     }
   };
+
+  const selectedAttachments = attachments.filter(
+    (file): file is File => file !== null
+  );
 
   return (
     <main className="min-h-screen bg-gray-100 px-4 py-10">
@@ -216,37 +246,55 @@ export default function Home() {
           </div>
 
           <div>
-            <label
-              htmlFor="attachments"
-              className="mb-2 block font-medium text-gray-700"
-            >
+            <label className="mb-2 block font-medium text-gray-700">
               Anexos
             </label>
 
-            <input
-              id="attachments"
-              name="attachments"
-              type="file"
-              multiple
-              onChange={(event) => {
-                setAttachments(
-                  event.target.files
-                    ? Array.from(event.target.files)
-                    : []
-                );
-              }}
-              className="w-full rounded-md border border-gray-300 px-4 py-2 text-gray-900"
-            />
+            <div className="space-y-3">
+              {attachments.map((file, index) => (
+                <div
+                  key={index}
+                  className="flex items-center gap-2"
+                >
+                  <input
+                    id={`attachment-${index}`}
+                    type="file"
+                    onChange={(event) =>
+                      handleAttachmentChange(index, event)
+                    }
+                    className="min-w-0 flex-1 rounded-md border border-gray-300 px-4 py-2 text-gray-900"
+                  />
 
-            <p className="mt-1 text-sm text-gray-500">
-              Puedes seleccionar uno o varios archivos.
-            </p>
+                  {attachments.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeAttachment(index)}
+                      className="rounded-md bg-red-100 px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-200"
+                    >
+                      Quitar
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
 
-            {attachments.length > 0 && (
+            <button
+              type="button"
+              onClick={addAttachmentInput}
+              className="mt-3 rounded-md bg-gray-200 px-4 py-2 font-medium text-gray-700 hover:bg-gray-300"
+            >
+              + Agregar otro archivo
+            </button>
+
+            {selectedAttachments.length > 0 && (
               <p className="mt-2 text-sm text-gray-600">
-                {attachments.length} archivo(s) seleccionado(s).
+                {selectedAttachments.length} archivo(s) seleccionado(s).
               </p>
             )}
+
+            <p className="mt-1 text-sm text-gray-500">
+              Puedes agregar uno o varios archivos.
+            </p>
           </div>
 
           <button
