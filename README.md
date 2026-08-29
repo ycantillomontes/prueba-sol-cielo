@@ -48,11 +48,16 @@ prueba-sol-cielo/
 │
 ├── .gitignore
 └── README.md
-```
 
 ## Instalación y ejecución
 
-El backend y el frontend se ejecutan como servicios independientes.
+### Clonar el repositorio
+
+cmd
+"git clone https://github.com/ycantillomontes/prueba-sol-cielo.git
+
+
+### El backend y el frontend se ejecutan como servicios independientes.
 
 ### 1. Backend - Django
 
@@ -105,7 +110,7 @@ cmd
 "python manage.py runserver"
 
 
-El backend estará disponible en:  http://127.0.0.1:8000
+El backend estará disponible en:  http://127.0.0.1:8000/admin
 
 
 ### 2. Frontend - Next.js

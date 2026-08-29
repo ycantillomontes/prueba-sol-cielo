@@ -1,7 +1,7 @@
 from rest_framework import generics
-from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
+from rest_framework.parsers import JSONParser
 
-from .models import PQRSAttachment, TicketPQRS
+from .models import TicketPQRS
 from .serializers import TicketPQRSSerializer
 
 
@@ -10,15 +10,4 @@ class TicketPQRSCrearView(generics.CreateAPIView):
     serializer_class = TicketPQRSSerializer
     parser_classes = [
         JSONParser,
-        MultiPartParser,
-        FormParser,
     ]
-
-    def perform_create(self, serializer):
-        ticket = serializer.save()
-
-        for file in self.request.FILES.getlist("attachments"):
-            PQRSAttachment.objects.create(
-                ticket=ticket,
-                file=file,
-            )

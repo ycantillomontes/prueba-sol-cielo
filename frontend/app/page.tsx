@@ -36,6 +36,14 @@ export default function Home() {
   ) => {
     const file = event.target.files?.[0] ?? null;
 
+    if (file && file.type !== "application/pdf") {
+      setErrorMessage("Solo se permiten archivos PDF.");
+      event.target.value = "";
+      return;
+    }
+
+    setErrorMessage("");
+
     setAttachments((previous) => {
       const updated = [...previous];
       updated[index] = file;
@@ -53,6 +61,36 @@ export default function Home() {
     );
   };
 
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+
+      reader.onload = () => {
+        const result = reader.result;
+
+        if (typeof result !== "string") {
+          reject(new Error("No fue posible convertir el archivo."));
+          return;
+        }
+
+        const base64 = result.split(",")[1];
+
+        if (!base64) {
+          reject(new Error("No fue posible obtener el contenido del archivo."));
+          return;
+        }
+
+        resolve(base64);
+      };
+
+      reader.onerror = () => {
+        reject(new Error("No fue posible leer el archivo."));
+      };
+
+      reader.readAsDataURL(file);
+    });
+  };
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -60,32 +98,44 @@ export default function Home() {
     setSuccessMessage("");
     setErrorMessage("");
 
-    const dataToSend = new FormData();
-
-    dataToSend.append("applicant_name", formData.applicant_name);
-    dataToSend.append("applicant_email", formData.applicant_email);
-    dataToSend.append("category", formData.category);
-    dataToSend.append("subject", formData.subject);
-    dataToSend.append("description", formData.description);
-
-    attachments.forEach((file) => {
-      if (file) {
-        dataToSend.append("attachments", file);
-      }
-    });
-
     try {
+      const attachmentsToSend = await Promise.all(
+        attachments
+          .filter((file): file is File => file !== null)
+          .map(async (file) => ({
+            name: file.name,
+            type: file.type,
+            content: await fileToBase64(file),
+          }))
+      );
+
+      const dataToSend = {
+        applicant_name: formData.applicant_name,
+        applicant_email: formData.applicant_email,
+        category: formData.category,
+        subject: formData.subject,
+        description: formData.description,
+        attachments: attachmentsToSend,
+      };
+
       const response = await fetch(
         "http://127.0.0.1:8000/api/pqrs/",
         {
           method: "POST",
-          body: dataToSend,
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(dataToSend),
         }
       );
 
       const data = await response.json();
 
       if (!response.ok) {
+        if (data.applicant_email) {
+          throw new Error("El correo electrónico no es válido.");
+        }
+
         throw new Error(
           data.detail || "No fue posible radicar la PQRS."
         );
@@ -250,6 +300,10 @@ export default function Home() {
               Anexos
             </label>
 
+            <p className="mb-3 text-sm text-gray-500">
+               Solo se permiten archivos PDF.
+            </p>
+
             <div className="space-y-3">
               {attachments.map((file, index) => (
                 <div
@@ -259,6 +313,7 @@ export default function Home() {
                   <input
                     id={`attachment-${index}`}
                     type="file"
+                    accept="application/pdf,.pdf"
                     onChange={(event) =>
                       handleAttachmentChange(index, event)
                     }
