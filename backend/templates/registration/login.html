@@ -1,0 +1,53 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso administrativo | Sol&Cielo</title>
+    <link rel="stylesheet" href="{% static 'pqrs/admin.css' %}">
+</head>
+<body class="login-page">
+    <div class="login-shell">
+        <aside class="login-brand">
+            <img src="{% static 'pqrs/logo.svg' %}" alt="Sol&Cielo">
+            <div class="solar-art" aria-hidden="true">
+                <div class="sun"></div>
+                <div class="panel">
+                    <span></span><span></span><span></span>
+                    <span></span><span></span><span></span>
+                    <span></span><span></span><span></span>
+                </div>
+                <div class="leaf leaf-a"></div>
+                <div class="leaf leaf-b"></div>
+            </div>
+        </aside>
+
+        <main class="login-card">
+            <div class="eyebrow">Panel administrativo</div>
+            <h1>Iniciar sesión</h1>
+            <p class="muted">Accede al panel de gestión de PQRS.</p>
+
+            {% if form.errors %}
+                <div class="alert alert-error">Usuario o contraseña incorrectos.</div>
+            {% endif %}
+
+            <form method="post" class="stack">
+                {% csrf_token %}
+                <label>
+                    Usuario
+                    <input type="text" name="username" autocomplete="username" required placeholder="Ingresa tu usuario">
+                </label>
+
+                <label>
+                    Contraseña
+                    <input type="password" name="password" autocomplete="current-password" required placeholder="Ingresa tu contraseña">
+                </label>
+
+                <input type="hidden" name="next" value="{{ next }}">
+                <button class="btn btn-primary btn-full" type="submit">Iniciar sesión</button>
+            </form>
+        </main>
+    </div>
+</body>
+</html>

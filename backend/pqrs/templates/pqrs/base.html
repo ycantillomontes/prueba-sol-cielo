@@ -1,0 +1,66 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Gestión PQRS | Sol&Cielo{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'pqrs/admin.css' %}">
+</head>
+<body class="admin-page">
+    <div class="admin-shell">
+        <aside class="sidebar">
+            <a class="sidebar-logo" href="{% url 'gestion_dashboard' %}">
+                <img src="{% static 'pqrs/logo-white.svg' %}" alt="Sol&Cielo">
+            </a>
+
+            <div class="user-box">
+                <div class="avatar">{{ request.user.username|first|upper }}</div>
+                <div>
+                    <strong>{{ request.user.username }}</strong>
+                    <small>En línea</small>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a class="{% if request.resolver_match.url_name == 'gestion_dashboard' %}active{% endif %}" href="{% url 'gestion_dashboard' %}">
+                    <span>⌂</span> Dashboard
+                </a>
+                <div class="nav-group">
+                    <div class="nav-heading"><span>▣</span> PQRS</div>
+                    <a class="sub-link {% if request.resolver_match.url_name == 'gestion_dashboard' %}active-sub{% endif %}" href="{% url 'gestion_dashboard' %}">
+                        Listado
+                    </a>
+                </div>
+            </nav>
+
+            <form method="post" action="{% url 'gestion_logout' %}" class="logout-form">
+                {% csrf_token %}
+                <button type="submit"><span>↪</span> Cerrar sesión</button>
+            </form>
+        </aside>
+
+        <main class="admin-main">
+            <header class="topbar">
+                <div>
+                    <div class="breadcrumb">Inicio / PQRS</div>
+                    <h1>{% block heading %}Gestión PQRS{% endblock %}</h1>
+                </div>
+                <div class="top-user">{{ request.user.username }}</div>
+            </header>
+
+            {% if messages %}
+                <div class="messages">
+                    {% for message in messages %}
+                        <div class="alert {% if message.tags == 'error' %}alert-error{% else %}alert-success{% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</body>
+</html>

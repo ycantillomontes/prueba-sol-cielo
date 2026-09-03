@@ -1,5 +1,6 @@
 import base64
 import binascii
+import re
 
 from django.core.files.base import ContentFile
 from rest_framework import serializers
@@ -7,22 +8,26 @@ from rest_framework import serializers
 from .models import PQRSAttachment, TicketPQRS
 
 
+MAX_FILE_SIZE = 5 * 1024 * 1024
+MAX_ATTACHMENTS = 5
+
+
 class PQRSAttachmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = PQRSAttachment
-        fields = [
-            "id",
-            "file",
-            "uploaded_at",
-        ]
-        read_only_fields = [
-            "id",
-            "uploaded_at",
-        ]
+        fields = ["id", "original_name", "file", "uploaded_at"]
+        read_only_fields = ["id", "original_name", "file", "uploaded_at"]
 
 
 class TicketPQRSSerializer(serializers.ModelSerializer):
-    attachments = serializers.SerializerMethodField()
+    """Public PQRS API.
+
+    The endpoint intentionally accepts application/json. PDF attachments are sent
+    as Base64 strings inside the JSON payload and converted back to real PDF files
+    on the server.
+    """
+
+    attachments = PQRSAttachmentSerializer(many=True, read_only=True)
 
     class Meta:
         model = TicketPQRS
@@ -44,76 +49,71 @@ class TicketPQRSSerializer(serializers.ModelSerializer):
             "attachments",
         ]
 
-    def to_internal_value(self, data):
-        attachments = data.get("attachments", [])
+    def validate(self, attrs):
+        request = self.context.get("request")
+        attachments = request.data.get("attachments", []) if request else []
 
         if attachments is None:
             attachments = []
-
         if not isinstance(attachments, list):
-            raise serializers.ValidationError({
-                "attachments": "Debe ser una lista de archivos."
-            })
+            raise serializers.ValidationError(
+                {"attachments": "Debe ser una lista de documentos en formato JSON."}
+            )
 
-        validated_data = super().to_internal_value(data)
+        if len(attachments) > MAX_ATTACHMENTS:
+            raise serializers.ValidationError(
+                {"attachments": f"Puedes adjuntar máximo {MAX_ATTACHMENTS} archivos."}
+            )
 
-        validated_attachments = []
+        for item in attachments:
+            if not isinstance(item, dict):
+                raise serializers.ValidationError(
+                    {"attachments": "Cada documento debe contener nombre y contenido."}
+                )
 
-        for attachment in attachments:
-            if not isinstance(attachment, dict):
-                raise serializers.ValidationError({
-                    "attachments": "Cada archivo debe ser un objeto."
-                })
+            name = str(item.get("name", "")).strip()
+            content = item.get("content")
 
-            name = attachment.get("name")
-            content = attachment.get("content")
+            if not name.lower().endswith(".pdf"):
+                raise serializers.ValidationError(
+                    {"attachments": "Solo se permiten archivos PDF."}
+                )
 
-            if not name:
-                raise serializers.ValidationError({
-                    "attachments": "Cada archivo debe tener un nombre."
-                })
-
-            if not content:
-                raise serializers.ValidationError({
-                    "attachments": f"El archivo {name} no contiene información."
-                })
+            if not isinstance(content, str) or not content:
+                raise serializers.ValidationError(
+                    {"attachments": f"El contenido de {name or 'el archivo'} no es válido."}
+                )
 
             try:
-                file_content = base64.b64decode(
-                    content,
-                    validate=True,
+                raw_content = content.split(",", 1)[-1]
+                decoded = base64.b64decode(raw_content, validate=True)
+            except (ValueError, binascii.Error):
+                raise serializers.ValidationError(
+                    {"attachments": f"El archivo {name} no contiene Base64 válido."}
                 )
-            except (ValueError, TypeError, binascii.Error):
-                raise serializers.ValidationError({
-                    "attachments": f"El archivo {name} no contiene un Base64 válido."
-                })
 
-            validated_attachments.append(
-                ContentFile(
-                    file_content,
-                    name=name,
+            if len(decoded) > MAX_FILE_SIZE:
+                raise serializers.ValidationError(
+                    {"attachments": f"Cada archivo PDF debe pesar máximo 5 MB: {name}."}
                 )
-            )
 
-        validated_data["_attachments"] = validated_attachments
+            if not decoded.startswith(b"%PDF"):
+                raise serializers.ValidationError(
+                    {"attachments": f"El archivo {name} no parece ser un PDF válido."}
+                )
 
-        return validated_data
+        return attrs
 
     def create(self, validated_data):
-        attachments = validated_data.pop("_attachments", [])
-
+        request = self.context.get("request")
+        attachments = request.data.get("attachments", []) if request else []
         ticket = TicketPQRS.objects.create(**validated_data)
 
-        for file in attachments:
-            PQRSAttachment.objects.create(
-                ticket=ticket,
-                file=file,
-            )
+        for item in attachments or []:
+            original_name = re.sub(r"[^A-Za-z0-9._-]", "_", str(item["name"]).strip())
+            raw_content = item["content"].split(",", 1)[-1]
+            decoded = base64.b64decode(raw_content, validate=True)
+            attachment = PQRSAttachment(ticket=ticket, original_name=original_name)
+            attachment.file.save(original_name, ContentFile(decoded), save=True)
 
         return ticket
-
-    def get_attachments(self, obj):
-        return PQRSAttachmentSerializer(
-            obj.attachments.all(),
-            many=True,
-        ).data

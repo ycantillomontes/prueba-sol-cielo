@@ -1,0 +1,100 @@
+{% extends "pqrs/base.html" %}
+
+{% block title %}{{ ticket.ticket_code }} | Sol&Cielo{% endblock %}
+{% block heading %}Detalle de PQRS{% endblock %}
+
+{% block content %}
+<div class="detail-breadcrumb">Inicio / PQRS / {{ ticket.ticket_code }}</div>
+
+<div class="detail-grid">
+    <div class="detail-main">
+        <section class="panel detail-card">
+            <div class="detail-title-row">
+                <h2>{{ ticket.ticket_code }}</h2>
+                <span class="status status-{{ ticket.status|lower }}">{{ ticket.get_status_display }}</span>
+            </div>
+
+            <dl class="info-grid">
+                <div><dt>Solicitante</dt><dd>{{ ticket.applicant_name }}</dd></div>
+                <div><dt>Correo</dt><dd>{{ ticket.applicant_email }}</dd></div>
+                <div><dt>Categoría</dt><dd>{{ ticket.get_category_display }}</dd></div>
+                <div><dt>Fecha de creación</dt><dd>{{ ticket.created_at|date:"d/m/Y H:i" }}</dd></div>
+            </dl>
+
+            <div class="content-block">
+                <h3>Asunto</h3>
+                <p>{{ ticket.subject }}</p>
+            </div>
+
+            <div class="content-block">
+                <h3>Descripción</h3>
+                <p class="description">{{ ticket.description|linebreaksbr }}</p>
+            </div>
+        </section>
+
+        {% if ticket.attachments.all %}
+        <section class="panel">
+            <h3>Documentos de soporte</h3>
+            <div class="attachments">
+                {% for attachment in ticket.attachments.all %}
+                    <a class="attachment" href="{{ attachment.file.url }}" target="_blank" rel="noopener">
+                        <span class="file-icon">PDF</span>
+                        <span>{{ attachment.original_name }}</span>
+                        <span class="download">Ver / Descargar ↗</span>
+                    </a>
+                {% empty %}
+                    <p class="muted">No hay documentos adjuntos.</p>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+    </div>
+
+    <aside class="detail-side">
+        <section class="panel">
+            <h3>Actualizar estado</h3>
+            <form method="post" class="stack">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="status">
+                <label>
+                    Estado actual
+                    <select name="status">
+                        {% for value, label in status_choices %}
+                            <option value="{{ value }}" {% if ticket.status == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <button class="btn btn-primary btn-full" type="submit">Guardar estado</button>
+            </form>
+        </section>
+
+        <section class="panel">
+            <h3>Bitácora</h3>
+            <div class="timeline">
+                {% for log in ticket.logs.all %}
+                    <article class="timeline-item">
+                        <div class="timeline-dot"></div>
+                        <div>
+                            <small>{{ log.created_at|date:"d/m/Y H:i" }}</small>
+                            <strong>{% if log.author %}{{ log.author.username }}{% else %}Sistema{% endif %}</strong>
+                            <p>{{ log.note }}</p>
+                        </div>
+                    </article>
+                {% empty %}
+                    <p class="muted">Aún no hay anotaciones.</p>
+                {% endfor %}
+            </div>
+
+            <form method="post" class="note-form">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="note">
+                <label>
+                    Agregar nota
+                    <textarea name="note" maxlength="2000" rows="4" placeholder="Escribe una nota..."></textarea>
+                </label>
+                <button class="btn btn-primary btn-full" type="submit">Agregar nota</button>
+            </form>
+        </section>
+    </aside>
+</div>
+{% endblock %}

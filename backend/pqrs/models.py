@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from django.db import models, transaction
 
 
@@ -18,7 +19,7 @@ class TicketPQRS(models.Model):
 
     STATUS_CHOICES = [
         ("NUEVO", "Nuevo"),
-        ("EN_REVISION", "En Revisión"),
+        ("EN_REVISION", "En revisión"),
         ("RESUELTO", "Resuelto"),
         ("CERRADO", "Cerrado"),
     ]
@@ -28,26 +29,16 @@ class TicketPQRS(models.Model):
         unique=True,
         editable=False,
     )
-
     applicant_name = models.CharField(max_length=150)
-
     applicant_email = models.EmailField()
-
-    category = models.CharField(
-        max_length=20,
-        choices=CATEGORY_CHOICES,
-    )
-
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
     subject = models.CharField(max_length=200)
-
     description = models.TextField()
-
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default="NUEVO",
     )
-
     created_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
@@ -57,12 +48,9 @@ class TicketPQRS(models.Model):
                     pk=1,
                     defaults={"last_number": 1000},
                 )
-
                 sequence.last_number += 1
                 sequence.save(update_fields=["last_number"])
-
                 self.ticket_code = f"PQRS-{sequence.last_number}"
-
                 super().save(*args, **kwargs)
         else:
             super().save(*args, **kwargs)
@@ -77,14 +65,32 @@ class PQRSAttachment(models.Model):
         on_delete=models.CASCADE,
         related_name="attachments",
     )
-
-    file = models.FileField(
-        upload_to="pqrs/",
-    )
-
-    uploaded_at = models.DateTimeField(
-        auto_now_add=True,
-    )
+    original_name = models.CharField(max_length=255)
+    file = models.FileField(upload_to="pqrs/")
+    uploaded_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.file.name
+
+
+class TicketLog(models.Model):
+    ticket = models.ForeignKey(
+        TicketPQRS,
+        on_delete=models.CASCADE,
+        related_name="logs",
+    )
+    author = models.ForeignKey(
+        get_user_model(),
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="pqrs_logs",
+    )
+    note = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.ticket.ticket_code} - {self.created_at:%Y-%m-%d %H:%M}"
