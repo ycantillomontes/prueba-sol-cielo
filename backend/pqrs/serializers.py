@@ -5,7 +5,7 @@ import re
 from django.core.files.base import ContentFile
 from rest_framework import serializers
 
-from .models import PQRSAttachment, TicketPQRS
+from .models import PQRSAttachment, TicketLog, TicketPQRS
 
 
 MAX_FILE_SIZE = 5 * 1024 * 1024
@@ -109,11 +109,17 @@ class TicketPQRSSerializer(serializers.ModelSerializer):
         attachments = request.data.get("attachments", []) if request else []
         ticket = TicketPQRS.objects.create(**validated_data)
 
+        TicketLog.objects.create(
+          ticket=ticket,
+          author=None,
+          note="PQRS radicada correctamente.",
+        )
+
         for item in attachments or []:
-            original_name = re.sub(r"[^A-Za-z0-9._-]", "_", str(item["name"]).strip())
-            raw_content = item["content"].split(",", 1)[-1]
-            decoded = base64.b64decode(raw_content, validate=True)
-            attachment = PQRSAttachment(ticket=ticket, original_name=original_name)
-            attachment.file.save(original_name, ContentFile(decoded), save=True)
+          original_name = re.sub(r"[^A-Za-z0-9._-]", "_", str(item["name"]).strip())
+          raw_content = item["content"].split(",", 1)[-1]
+          decoded = base64.b64decode(raw_content, validate=True)
+          attachment = PQRSAttachment(ticket=ticket, original_name=original_name)
+          attachment.file.save(original_name, ContentFile(decoded), save=True)
 
         return ticket

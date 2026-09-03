@@ -105,3 +105,12 @@ CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
 LOGIN_URL = "/api/pqrs/gestion/login/"
 LOGIN_REDIRECT_URL = "/api/pqrs/gestion/"
 LOGOUT_REDIRECT_URL = "/api/pqrs/gestion/login/"
+
+REST_FRAMEWORK = {
+    "DEFAULT_RENDERER_CLASSES": [
+        "rest_framework.renderers.JSONRenderer",
+    ],
+    "DEFAULT_PARSER_CLASSES": [
+        "rest_framework.parsers.JSONParser",
+    ],
+}
