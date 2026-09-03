@@ -20,13 +20,6 @@ class PQRSAttachmentSerializer(serializers.ModelSerializer):
 
 
 class TicketPQRSSerializer(serializers.ModelSerializer):
-    """Public PQRS API.
-
-    The endpoint intentionally accepts application/json. PDF attachments are sent
-    as Base64 strings inside the JSON payload and converted back to real PDF files
-    on the server.
-    """
-
     attachments = PQRSAttachmentSerializer(many=True, read_only=True)
 
     class Meta:
